@@ -8,8 +8,7 @@ import LocalStore from './store/LocalStore';
 import database from './database';
 import config from './config';
 import { start } from './bot';
-import slack from './slack';
-import RTMHandler from './slack/Rtm';
+import { boltApp } from './slack';
 import WBCHandler from './slack/Wbc';
 import APIHandler from './api';
 import WEBHandler from './web';
@@ -20,18 +19,15 @@ const init = async () => {
     await boot();
 };
 
-init().then(() => {
-    log.info('Staring heyburrito');
+init().then(async () => {
+    log.info('Starting heyburrito (Bolt with Socket Mode)');
 
     // Configure BurritoStore
     BurritoStore.setDatabase(database);
 
     // Set and start slack services
-    const { rtm, wbc } = slack;
-
-    rtm.start();
-    RTMHandler.register(rtm);
-    WBCHandler.register(wbc);
+    await boltApp.start();
+    WBCHandler.register(boltApp.client);
 
     // Start bot instance
     start();
