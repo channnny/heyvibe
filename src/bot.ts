@@ -3,7 +3,7 @@ import BurritoStore from './store/BurritoStore';
 import LocalStore from './store/LocalStore';
 import { parseMessage } from './lib/parseMessage';
 import { validBotMention, validMessage } from './lib/validator';
-import Rtm from './slack/Rtm';
+import { boltApp } from './slack';
 import Wbc from './slack/Wbc';
 
 const {
@@ -86,7 +86,7 @@ const handleBurritos = async (giver: string, updates: Updates[]) => {
 };
 
 const start = () => {
-    Rtm.on('slackMessage', async (event: any) => {
+    boltApp.event('message', async ({ event }) => {
         if (validMessage(event, emojis, LocalStore.getAllBots())) {
             if (validBotMention(event, LocalStore.botUserID())) {
                 // Geather data and send back to user
