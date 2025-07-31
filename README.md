@@ -45,7 +45,14 @@ Check environment variables section.
 ### Get started
 
 1. Go to https://yourworkspace.slack.com/apps and search for Bots.  
-2. Add **Bots ( Connect a bot to the Slack Real Time Messaging API)**.  
+2. Add **Bots ( Connect a bot to the Slack Real Time Messaging API)**.
+- SLACK_API_TOKEN : xoxb-xxxx 
+  - Settings - Install App - Bot User OAuth Token
+- SLACK_SIGNING_SECRET : e00xxxx
+  - Settings - Basic Information - Signing Secret
+- SLACK_APP_TOKEN : xapp-xxxx
+  - Settings - Basic Information - App-Level Tokens - Generate an app-level token(require scope:
+    connections:write)
 3. Give the bot a name, ex: heyburrito, and obtain apiToken.  
 4. Choose how to run it => See Docker or Node section .
 5. Invite the new bot to your slack channels ( where u want to be able to send burritos ).
@@ -76,6 +83,8 @@ Check environment variables section.
 | MONGODB_DATABASE    |                                            | Yes*     | Only requierd if DATABASE_DRIVER is mongodb                       |
 | DATABASE_URI        | MONGODB_URL/MONGODB_DATABASE               | No       | Only in use when DATABASE_DRIVER is mongodb                       |
 | SLACK_API_TOKEN     |                                            | Yes      | See Get started section                                           |
+| SLACK_SIGNING_SECRET     |                                            | Yes      | See Get started section                                           |
+| SLACK_APP_TOKEN     |                                            | Yes      | See Get started section                                           |
 | SLACK_EMOJI_INC     | :burrito:                                  | No       | Emoji to increment points. ex:( :burrito: )                       |
 | SLACK_EMOJI_DEC     | :rottenburrito:                            | No       | Emoji to decrement points. ex:( :rottenburrito: )                 |
 | SLACK_DAILY_CAP     | 5                                          | No       | Defaults to 5/day .                                               |
