@@ -73,8 +73,11 @@ Route.add({
     handler: async (request: any, res: any) => {
         try {
             const { listType, scoreTypeInput } = request.params;
+            const { year, month } = request.query;
 
             const scoreType = scoreTypeInput || 'inc';
+            const selectedYear = year ? parseInt(year) : undefined;
+            const selectedMonth = month ? parseInt(month) : undefined;
 
             if (!ALLOWED_LISTTYPES.includes(listType)) {
                 throw ({
@@ -90,7 +93,7 @@ Route.add({
                 });
             }
 
-            const score = await getScoreBoard(listType, scoreType);
+            const score = await getScoreBoard(listType, scoreType, selectedYear, selectedMonth);
 
             const data = {
                 error: false,
@@ -121,6 +124,10 @@ Route.add({
     handler: async (request: any, res: any) => {
         try {
             const { user: userId, listType, scoreType } = request.params;
+            const { year, month } = request.query;
+
+            const selectedYear = year ? parseInt(year) : undefined;
+            const selectedMonth = month ? parseInt(month) : undefined;
 
             if (!userId) {
                 throw ({
@@ -143,7 +150,7 @@ Route.add({
                 });
             }
 
-            const { ...result } = await getUserScore(userId, listType, scoreType);
+            const { ...result } = await getUserScore(userId, listType, scoreType, selectedYear, selectedMonth);
 
             const data = {
                 error: false,
@@ -176,6 +183,10 @@ Route.add({
     handler: async (request: any, res: any) => {
         try {
             const { user: userId } = request.params;
+            const { year, month } = request.query;
+
+            const selectedYear = year ? parseInt(year) : undefined;
+            const selectedMonth = month ? parseInt(month) : undefined;
 
             if (!userId) {
                 throw ({
@@ -184,7 +195,7 @@ Route.add({
                 });
             }
 
-            const { ...result } = await getUserStats(userId);
+            const { ...result } = await getUserStats(userId, selectedYear, selectedMonth);
 
             const data = {
                 error: false,

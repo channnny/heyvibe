@@ -1,9 +1,10 @@
+import * as log from 'bog';
 import config from './config';
 import BurritoStore from './store/BurritoStore';
 import LocalStore from './store/LocalStore';
-import { parseMessage } from './lib/parseMessage';
+import { parseAnonymousMessage, parseMessage } from './lib/parseMessage';
 import { validBotMention, validMessage } from './lib/validator';
-import Rtm from './slack/Rtm';
+import { boltApp } from './slack';
 import Wbc from './slack/Wbc';
 
 const {
@@ -53,7 +54,7 @@ const handleBurritos = async (giver: string, updates: Updates[]) => {
         const burritos = await BurritoStore.givenBurritosToday(giver, 'from');
         const diff = dailyCap - burritos;
         if (updates.length > diff) {
-            notifyUser(giver, `You are trying to give away ${updates.length} burritos, but you only have ${diff} burritos left today!`);
+            notifyUser(giver, `${updates.length}개의 칭찬을 주려고 했는데, ${diff}개의 칭찬이 오늘 남아있어요! 메시지를 삭제하고 갯수에 맞게 다시 작성해주세요 ;)`);
             return false;
         }
         if (burritos >= dailyCap) {
@@ -69,7 +70,7 @@ const handleBurritos = async (giver: string, updates: Updates[]) => {
         const diffDec = dailyDecCap - givenRottenBurritos;
         if (incUpdates.length) {
             if (incUpdates.length > diffInc) {
-                notifyUser(giver, `You are trying to give away ${updates.length} burritos, but you only have ${diffInc} burritos left today!`);
+                notifyUser(giver, `${updates.length}개의 칭찬을 주려고 했는데, ${diffInc}개의 칭찬이 오늘 남아있어요! 메시지를 삭제하고 갯수에 맞게 다시 작성해주세요 ;)`);
             } else {
                 await giveBurritos(giver, incUpdates);
             }
@@ -85,8 +86,34 @@ const handleBurritos = async (giver: string, updates: Updates[]) => {
     return true;
 };
 
+async function notifyChannel(channel, text) {
+    await boltApp.client.chat.postMessage({
+        channel,
+        text,
+        blocks: [
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*[익명의 칭찬을 대신 전해드려요!]*\n${text}` },
+            },
+        ],
+    });
+}
+
+// slash command text 정규화
+const canonicalize = (text = '') => text
+    // users: <@U123|nick> -> <@U123>
+    .replace(/<@([UW][A-Z0-9]+)(\|[^>]+)?>/gi, '<@$1>')
+    // channels: <#C123|name> -> <#C123>
+    .replace(/<#(C[A-Z0-9]+)(\|[^>]+)?>/gi, '<#$1>')
+    // user groups: <!subteam^S123|@group> -> <!subteam^S123>
+    .replace(/<!subteam\^([SW][A-Z0-9]+)(\|[^>]+)?>/gi, '<!subteam^$1>')
+    // mailto/link: <mailto:a@b|a@b>, <https://..|text> -> URL만
+    .replace(/<mailto:([^|>]+)(\|[^>]+)?>/gi, '$1')
+    .replace(/<([^|>]+)\|[^>]+>/g, '$1');
+
 const start = () => {
-    Rtm.on('slackMessage', async (event: any) => {
+    boltApp.event('message', async ({ event }) => {
+        log.info(`event: ${JSON.stringify(event)}`);
         if (validMessage(event, emojis, LocalStore.getAllBots())) {
             if (validBotMention(event, LocalStore.botUserID())) {
                 // Geather data and send back to user
@@ -99,6 +126,31 @@ const start = () => {
                     }
                 }
             }
+        }
+    });
+
+    boltApp.command('/heyvibe', async ({ command, ack, say }) => {
+        log.info(`command: ${JSON.stringify(command)}`);
+        await ack();
+
+        const sender = `<@${command.user_id}>`;
+        const rawText = (command.text || '').trim();
+        const msg = canonicalize(rawText);
+
+        if (msg.includes(sender)) {
+            log.warn('셀프 멘션 불가');
+            return;
+        }
+
+        const result = parseAnonymousMessage(msg, emojis);
+        if (result) {
+            const { giver, updates } = result;
+            if (updates.length) {
+                await notifyChannel('C098TPGKMAQ', msg);
+                await handleBurritos(giver, updates);
+            }
+        } else {
+            await say('메시지 처리에 실패했어요!');
         }
     });
 };

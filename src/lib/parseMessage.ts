@@ -61,4 +61,41 @@ function parseMessage(msg, emojis) {
     };
 }
 
-export { parseMessage, parseUsernames };
+function parseAnonymousMessage(msg, emojis) {
+    // Array containg data of whom to give / remove points from
+    const updates = [];
+
+    // Array with "allowed" emojis mentioned in slackmessage
+    const emojiHits = [];
+
+    // Get usernames from slack message
+    const users: string[] = parseUsernames(msg);
+    if (!users.length) return false;
+
+    // Match and push allowed emojis to emojiHits
+    emojis.map((x: any) => {
+        const hitsRaw = msg.match(new RegExp(x.emoji, 'g'));
+        if (hitsRaw) hitsRaw.forEach((e: any) => emojiHits.push(e));
+        return undefined;
+    });
+
+    // Rebuild emoji object with emojiHits
+    const hits = emojiHits.map((x: any) => (
+        {
+            emoji: x,
+            type: emojis.filter((t: any) => t.emoji === x)[0].type,
+        }
+    ));
+
+    if (hits.length === 0) return false;
+
+    // For each emojiHits give each user a update
+    hits.map((x) => users.forEach((u) => updates.push({ username: u, type: x.type })));
+
+    return {
+        updates,
+        giver: 'U098B2BE541',
+    };
+}
+
+export { parseMessage, parseAnonymousMessage, parseUsernames };

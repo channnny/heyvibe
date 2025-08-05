@@ -128,15 +128,22 @@ class MongoDBDriver {
      * Should be able to return burrito List ( scoreType inc ) and
      * listtype ( dec ) AKA rottenburritoList
      */
-    async getScoreBoard({ user, listType, today }) {
+    async getScoreBoard({ user, listType, today, year, month }) {
         let match: any = {};
 
         if (user) {
             match = (listType === 'from') ? { to: user } : { from: user };
         }
-        if (today) {
+        
+        // 년도/월 필터링 추가
+        if (year && month) {
+            const startDate = new Date(year, month - 1, 1);
+            const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+            match.given_at = { $gte: startDate, $lte: endDate };
+        } else if (today) {
             match.given_at = { $gte: time().start, $lt: time().end };
         }
+        
         return this.find('burritos', match);
     }
 }

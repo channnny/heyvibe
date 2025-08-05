@@ -16,9 +16,11 @@ const {
 /**
  * @param {string} scoretype - inc / dec
  * @param {string} listType - to / from
+ * @param {number} year - 년도
+ * @param {number} month - 월
  */
-const getScoreBoard = async (listType: string, scoreType: string) => {
-    const data = await BurritoStore.getScoreBoard({ listType, scoreType });
+const getScoreBoard = async (listType: string, scoreType: string, year?: number, month?: number) => {
+    const data = await BurritoStore.getScoreBoard({ listType, scoreType, year, month });
     const score = [];
     const uniqueUsername = [...new Set(data.map((x) => x[listType]))];
 
@@ -80,8 +82,10 @@ const _getUserScoreBoard = async ({ ...args }) => {
 
 /**
  * @param {string} user - Slack userId
+ * @param {number} year - 년도
+ * @param {number} month - 월
  */
-const getUserStats = async (user: string) => {
+const getUserStats = async (user: string, year?: number, month?: number) => {
     const [
         userStats,
         givenList,
@@ -90,8 +94,8 @@ const getUserStats = async (user: string) => {
         receivedListToday,
     ] = await Promise.all([
         BurritoStore.getUserStats(user),
-        _getUserScoreBoard({ user, listType: 'to' }),
-        _getUserScoreBoard({ user, listType: 'from' }),
+        _getUserScoreBoard({ user, listType: 'to', year, month }),
+        _getUserScoreBoard({ user, listType: 'from', year, month }),
         _getUserScoreBoard({ user, listType: 'to', today: true }),
         _getUserScoreBoard({ user, listType: 'from', today: true }),
     ]);
@@ -125,9 +129,13 @@ const givenBurritosToday = async (user: string) => {
 
 /**
  * @param {string} user - Slack userId
+ * @param {string} listType - to / from
+ * @param {string} scoreType - inc / dec
+ * @param {number} year - 년도
+ * @param {number} month - 월
  */
-const getUserScore = async (user: string, listType: string, scoreType: string) => {
-    const scoreList = await BurritoStore.getScoreBoard({ listType, scoreType });
+const getUserScore = async (user: string, listType: string, scoreType: string, year?: number, month?: number) => {
+    const scoreList = await BurritoStore.getScoreBoard({ listType, scoreType, year, month });
     const userScore = scoreList.filter((x) => x[listType] === user);
 
     const scoreTypeFilter = (scoreType === 'inc') ? 1 : -1;

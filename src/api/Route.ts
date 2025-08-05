@@ -55,13 +55,17 @@ class Route {
      */
     check({ method, path, req }) {
         log.debug('Route :: check :: ', method, path);
+        
+        // URL에서 쿼리 파라미터 제거
+        const cleanPath = path.split('?')[0];
+        
         /**
          * Get registerd endpoint, match method and path.
          */
         const [route] = this.apiRoutes.filter((x) => {
             // Clean up paths
             const routeSplitted: string[] = cleanUp(x.path);
-            const reqSplitted: string[] = cleanUp(path);
+            const reqSplitted: string[] = cleanUp(cleanPath);
 
             const routeUrl = routeSplitted.map((s) => `${s}/`).join('');
             const reqUrl = reqSplitted.map((r) => `${r}/`).join('');
@@ -77,12 +81,12 @@ class Route {
 
         // Get args from request
         const routePath = route.path.split('/');
-        const reqPath = path.split('/');
+        const reqPath = cleanPath.split('/');
 
         const reqArgs = reqPath.filter((x) => !routePath.includes(x));
 
-        const args = reqArgs.map((x) => {
-            const key = routeArgs.shift();
+        const args = reqArgs.map((x, index) => {
+            const key = routeArgs[index];
             const keyClean = key ? key.replace(/\{|\}/gi, '') : undefined;
             if (keyClean) return { [keyClean]: x };
             return undefined;
@@ -93,6 +97,14 @@ class Route {
 
         // Add args to req object
         req.params = argsObject;
+
+        // 쿼리 파라미터 처리
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const queryParams: any = {};
+        url.searchParams.forEach((value, key) => {
+            queryParams[key] = value;
+        });
+        req.query = queryParams;
 
         // Plocka ut params from url
         const request = req;

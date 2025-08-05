@@ -13,6 +13,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@slack/bolt": "^4.4.0",
     "@slack/rtm-api": "^5.0.3",
     "@slack/web-api": "^5.6.0",
     "bog": "^1.0.2",
