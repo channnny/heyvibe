@@ -3,7 +3,7 @@ import config from './config';
 import BurritoStore from './store/BurritoStore';
 import LocalStore from './store/LocalStore';
 import { parseAnonymousMessage, parseMessage } from './lib/parseMessage';
-import { validBotMention, validMessage } from './lib/validator';
+import { validBotMention, validChannel, validMessage } from './lib/validator';
 import { boltApp } from './slack';
 import Wbc from './slack/Wbc';
 
@@ -86,7 +86,7 @@ const handleBurritos = async (giver: string, updates: Updates[]) => {
     return true;
 };
 
-async function notifyChannel(channel, text) {
+async function notifyChannel(text, channel: string = 'C098TPGKMAQ') {
     await boltApp.client.chat.postMessage({
         channel,
         text,
@@ -113,14 +113,15 @@ const canonicalize = (text = '') => text
 
 const start = () => {
     boltApp.event('message', async ({ event }) => {
-        log.info(`event: ${JSON.stringify(event)}`);
-        if (validMessage(event, emojis, LocalStore.getAllBots())) {
+        if (validMessage(event, emojis, LocalStore.getAllBots()) && validChannel(event.channel)) {
             if (validBotMention(event, LocalStore.botUserID())) {
                 // Geather data and send back to user
             } else {
+                log.info(`event: ${JSON.stringify(event)}`);
                 const result = parseMessage(event, emojis);
                 if (result) {
                     const { giver, updates } = result;
+                    log.info(`giver: ${giver}`);
                     if (updates.length) {
                         await handleBurritos(giver, updates);
                     }
@@ -130,27 +131,31 @@ const start = () => {
     });
 
     boltApp.command('/heyvibe', async ({ command, ack, say }) => {
-        log.info(`command: ${JSON.stringify(command)}`);
         await ack();
 
-        const sender = `<@${command.user_id}>`;
+        const giver = command.user_id;
         const rawText = (command.text || '').trim();
         const msg = canonicalize(rawText);
 
-        if (msg.includes(sender)) {
+        if (msg.includes(giver)) {
             log.warn('셀프 멘션 불가');
             return;
         }
 
-        const result = parseAnonymousMessage(msg, emojis);
-        if (result) {
-            const { giver, updates } = result;
-            if (updates.length) {
-                await notifyChannel('C098TPGKMAQ', msg);
-                await handleBurritos(giver, updates);
+        if (validChannel(command.channel_id)) {
+            log.info(`command: ${JSON.stringify(command)}`);
+
+            const result = parseAnonymousMessage(msg, emojis);
+            if (result) {
+                const { updates } = result;
+                if (updates.length) {
+                    if (await handleBurritos(giver, updates)) {
+                        await notifyChannel(msg);
+                    }
+                }
+            } else {
+                await say('메시지 처리에 실패했어요!');
             }
-        } else {
-            await say('메시지 처리에 실패했어요!');
         }
     });
 };

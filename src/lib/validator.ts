@@ -62,6 +62,10 @@ function validMessage(message: any, emojis: any, allBots: any): boolean {
     return true;
 }
 
+function validChannel(channel: string, targetChannel: string = 'C098TPGKMAQ') {
+    return channel === targetChannel;
+}
+
 function validBotMention(message: any, botUserID: any) {
     if ((message.text.match(`<@${botUserID}>`)) && (message.text.match('stats'))) {
         return true;
@@ -72,6 +76,7 @@ function validBotMention(message: any, botUserID: any) {
 export {
     validBotMention,
     validMessage,
+    validChannel,
     selfMention,
     sentFromBot,
     sentToBot,
