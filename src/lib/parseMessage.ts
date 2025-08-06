@@ -94,7 +94,6 @@ function parseAnonymousMessage(msg, emojis) {
 
     return {
         updates,
-        giver: 'U098B2BE541',
     };
 }
 
