@@ -121,7 +121,6 @@ const start = () => {
                 const result = parseMessage(event, emojis);
                 if (result) {
                     const { giver, updates } = result;
-                    log.info(`giver: ${giver}`);
                     if (updates.length) {
                         await handleBurritos(giver, updates);
                     }
